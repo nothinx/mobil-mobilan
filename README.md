@@ -45,7 +45,7 @@ jalur, tabrak obstacle, skor). Tanpa jendela: tambahkan `gui:=false`. Pantau BEV
 ### 3. Mobil asli (Jetson Orin Nano, JetPack 6.2 / Ubuntu 22.04)
 
 ```bash
-mkdir -p ~/ws/src && git clone <repo> ~/ws/src/ksti_mav
+mkdir -p ~/ws/src && git clone https://github.com/nothinx/mobil-mobilan.git ~/ws/src/ksti_mav
 bash ~/ws/src/ksti_mav/jetson/setup.sh
 # isi config/robot.yaml (docs/MEKANIKAL-ELEKTRIKAL.md §6), lalu:
 sudo systemctl enable --now ksti-mav
