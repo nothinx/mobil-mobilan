@@ -38,7 +38,8 @@ docker compose run --rm sim                                                     
 docker compose run --rm sim ros2 launch ksti_mav sim.launch.py world:=ksti_light_challenge
 ```
 
-Mobil start otomatis 4 s setelah dunia siap; wasit melapor di `/referee/status`. Pantau BEV:
+Mobil start otomatis 4 s setelah dunia siap; wasit melapor di `/referee/status` (checkpoint, keluar
+jalur, tabrak obstacle, skor). Tanpa jendela: tambahkan `gui:=false`. Pantau BEV:
 `ros2 run rqt_image_view rqt_image_view /autopilot/debug`.
 
 ### 3. Mobil asli (Jetson Orin Nano, JetPack 6.2 / Ubuntu 22.04)
@@ -62,9 +63,20 @@ Mobil menunggu tombol **START** fisik. Challenge: `ros2 launch ksti_mav robot.la
 | `/autopilot/state`, `/autopilot/debug` | String (JSON), Image (BEV) | diagnosa |
 | `/odom`, `/referee/status` | Odometry, String (JSON) | hanya simulasi |
 
-## Status
+## Status (3 Nov 2026)
 
-- Sim 2D: 6 skenario (gelap/terang × race/challenge, v_max 1.2–1.6) **lulus tanpa pelanggaran**.
-- Firmware: kompilasi untuk Arduino Nano OK (4.6 KB).
-- Gazebo & node ROS: ditulis untuk Humble + Fortress; jalankan `docker compose run --rm sim` untuk verifikasi pertama.
-- Mobil asli: menunggu perakitan & kalibrasi.
+| Uji | Hasil |
+|---|---|
+| `tests/test_core.py` (Windows & Ubuntu 22.04 di Docker) | 6/6 lulus |
+| Sim 2D: gelap / terang / challenge gelap / challenge terang | semua 8/8 checkpoint, 0 pelanggaran (~17 s; challenge ~23 s) |
+| **Gazebo Fortress** race, lantai gelap & terang (6 run) | **6/6 bersih** — 8/8 checkpoint, 0 pelanggaran, berhenti otomatis setelah finish (~18 s) |
+| **Gazebo Fortress** challenge, 6 obstacle kotak 3D (6 run) | **4/6 bersih**; 2 run keluar jalur sekali (Gazebo tidak memindahkan mobil ke checkpoint seperti wasit, jadi run itu tak selesai) |
+| Firmware Arduino Nano | kompilasi OK (4.6 KB) |
+| Mobil asli | menunggu perakitan & kalibrasi |
+
+Kamera Gazebo 28 fps, real-time factor ≈ 1 (render perangkat lunak). Uji otomatis tanpa GUI:
+`docker compose run --rm sim ros2 launch ksti_mav sim.launch.py gui:=false world:=ksti_dark_challenge`.
+Rekam kamera + BEV + state untuk debug (sim atau mobil asli): `python3 tools/gz_snapshot.py <folder> --record 20`.
+
+Batas yang diketahui: obstacle di lajur luar tikungan radius ~0.5 m tidak bisa dilewati mobil 40 cm
+(lihat `docs/RISET.md` §3); aturan menjamin radius ≥ 1.5 m.

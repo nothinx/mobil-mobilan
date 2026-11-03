@@ -23,7 +23,8 @@ import numpy as np
 @dataclass
 class LaneConfig:
     track_width: float = 0.50      # lebar antar garis tepi [m]
-    x_min: float = 0.30            # jangkauan BEV dari poros belakang [m]
+    x_min: float = 0.45            # jangkauan BEV dari poros belakang [m]
+    hood_row: int = 300            # baris citra kamera mulai moncong mobil terlihat (0 = tidak ada); cek /autopilot/debug
     x_max: float = 1.50
     y_half: float = 0.75
     res: float = 0.005             # m/piksel BEV
@@ -120,6 +121,8 @@ class LaneDetector:
         self.cam = cam
         self.Hb, self.B, self.size = cam.bev_homography(c.x_min, c.x_max, c.y_half, c.res)
         ones = np.full((cam.h, cam.w), 255, np.uint8)
+        if c.hood_row > 0:
+            ones[c.hood_row:] = 0  # moncong mobil sendiri: tepinya terbaca sebagai garis melintang
         v = cv2.warpPerspective(ones, self.Hb, self.size, flags=cv2.WARP_INVERSE_MAP | cv2.INTER_NEAREST)
         self.valid = cv2.erode(v, np.ones((5, 5), np.uint8)) > 0
         k = int(round(c.line_max_width / c.res)) | 1
@@ -147,7 +150,11 @@ class LaneDetector:
     def marking_mask(self, bev):
         c = self.cfg
         gray = cv2.cvtColor(bev, cv2.COLOR_BGR2GRAY)
-        floor = float(np.median(gray[self.valid])) if self.valid.any() else 0.0
+        # lantai = median di sekitar garis tengah prediksi; di tepi arena sebagian besar pandangan bisa
+        # lantai lain (lebih terang/gelap) yang membalik polaritas
+        near = self.corridor(self.center, c.track_width / 2) & self.valid
+        src = gray[near] if near.sum() > 200 else gray[self.valid]
+        floor = float(np.median(src)) if src.size else 0.0
         pol = c.polarity if c.polarity != "auto" else ("white" if floor < 128 else "black")
         g = gray.copy()
         g[~self.valid] = int(floor)
@@ -157,6 +164,14 @@ class LaneDetector:
         t = max(c.min_contrast, 0.4 * float(np.percentile(vals, 99.5))) if vals.size else 255
         sat = cv2.cvtColor(bev, cv2.COLOR_BGR2HSV)[:, :, 1]
         return (th > t) & (sat < 90) & self.valid, pol, floor
+
+    def corridor(self, path, half):
+        """Mask BEV piksel berjarak < half dari polyline path."""
+        m = np.zeros(self.valid.shape, np.uint8)
+        if len(path) > 1:
+            cv2.polylines(m, [self.to_px(path).round().astype(np.int32)], False, 1,
+                          max(1, int(2 * half / self.cfg.res)))
+        return m > 0
 
     def to_m(self, colrow):
         c = self.cfg

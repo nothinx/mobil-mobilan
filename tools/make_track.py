@@ -149,6 +149,7 @@ def main():
     ap.add_argument("--start-px", type=float, nargs=2, default=(360, 2410),
                     help="lokasi garis start pada gambar 2400x3000 (default: tanda di kiri bawah contoh)")
     ap.add_argument("--checkpoints", type=int, default=8)
+    ap.add_argument("--obstacle-min-radius", type=float, default=0.9)
     a = ap.parse_args()
 
     gray = load_gray(a.src)
@@ -157,11 +158,21 @@ def main():
     data = build_from_raster(gray, a.width, a.start_px, a.checkpoints)
     tr = Track(data)
 
-    # obstacle challenge: kotak di tiap checkpoint, bergantian di lajur kiri / kanan
+    # obstacle challenge: kotak di checkpoint, bergantian lajur kiri / kanan. Dilewati di tikungan yang
+    # lebih tajam dari `--obstacle-min-radius`: mobil 40 cm yang belok di lajur dalam radius ~0.36 m menyapu
+    # sampai ~0.56 m dari pusat, sementara obstacle di lajur luar mulai 0.55 m -> pasti bersenggolan.
+    # Aturan menjamin radius >= 1.5 m, jadi kasus itu tidak realistis untuk lomba.
+    n = len(tr.center)
+    m = max(1, int(0.3 / (tr.length / n)))
+    hd = np.array([tr.heading(i) for i in range(n)])
+    radius = 0.3 / np.maximum(np.abs(np.angle(np.exp(1j * (np.roll(hd, -m) - hd)))), 1e-6)
     obs = []
     for k, i in enumerate(data["checkpoints_idx"]):
+        near = [(i + d) % n for d in range(-2 * m, 2 * m + 1)]
+        if radius[near].min() < a.obstacle_min_radius:
+            continue
         h = tr.heading(i)
-        side = 0.125 if k % 2 else -0.125
+        side = 0.125 if len(obs) % 2 else -0.125
         x, y = tr.center[i]
         obs.append([round(x - math.sin(h) * side, 3), round(y + math.cos(h) * side, 3), round(h, 3)])
     data["obstacles"] = obs
@@ -189,6 +200,7 @@ def main():
     print(f"skala {data['m_per_px'] * 1000:.2f} mm/px, arena {w:.2f} x {h:.2f} m, panjang {st['length_m']:.1f} m")
     print(f"lebar {st['width_min_m']:.3f}..{st['width_max_m']:.3f} m, marka {data['line_width_m'] * 100:.1f} cm, "
           f"radius min garis tengah {st['min_radius_m']:.2f} m, {len(data['centerline'])} titik")
+    print(f"obstacle challenge: {len(obs)} dari {len(data['checkpoints_idx'])} checkpoint")
 
 
 if __name__ == "__main__":

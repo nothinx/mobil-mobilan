@@ -12,11 +12,12 @@ class MarkConfig:
     # HSV OpenCV (H 0..180). Start/finish "belum tentu merah" kata panitia -> ubah saat technical meeting.
     finish_hsv: tuple = ((0, 110, 70, 10, 255, 255), (170, 110, 70, 180, 255, 255))
     checkpoint_hsv: tuple = ((40, 80, 50, 85, 255, 255),)
-    band_x: tuple = (0.30, 0.60)   # pita dekat tempat warna diukur [m]
-    corridor: float = 0.30         # |y - garis tengah| yang dianggap di dalam lintasan [m]
+    band_x: tuple = (0.45, 0.75)   # pita dekat tempat warna diukur [m]
+    corridor: float = 0.22         # |y - garis tengah| yang dianggap di dalam lintasan [m]; di luar garis tepi diabaikan
     frac_on: float = 0.05          # fraksi piksel berwarna di pita agar dianggap terlihat
     obstacle_min: float = 0.06     # obstacle lebih lebar dari marka mana pun [m]
     obstacle_contrast: int = 45
+    obstacle_x_min: float = 0.50   # moncong mobil sendiri jangan dianggap obstacle
     obstacle_x_max: float = 1.30
 
 
@@ -63,15 +64,12 @@ class MarkDetector:
         k = int(round(c.obstacle_min / lc.res)) | 1
         self.k_obs = cv2.getStructuringElement(cv2.MORPH_RECT, (k, k))
         self.min_area = (c.obstacle_min / lc.res) ** 2
+        self.k_mark = np.ones((15, 15), np.uint8)  # ~7 cm: tepi buram marka jauh
         self.finish = Debounce()
         self.checkpoint = Debounce()
 
     def _corridor(self, path):
-        m = np.zeros(self.ld.valid.shape, np.uint8)
-        if len(path) > 1:
-            th = max(1, int(2 * self.cfg.corridor / self.ld.cfg.res))
-            cv2.polylines(m, [self.ld.to_px(path).round().astype(np.int32)], False, 1, th)
-        return m > 0
+        return self.ld.corridor(path, self.cfg.corridor)
 
     def update(self, lane):
         """-> (finish_event, checkpoint_event, Obstacle|None) untuk satu frame."""
@@ -86,9 +84,14 @@ class MarkDetector:
         cp = self.checkpoint.update((green & band).sum() / n > c.frac_on)
 
         gray = cv2.cvtColor(lane.bev, cv2.COLOR_BGR2GRAY).astype(np.int16)
-        floor = float(np.median(gray[lane.valid])) if lane.valid.any() else 0.0
+        floor = float(np.median(gray[corr])) if corr.sum() > 200 else 0.0  # lantai lintasan, bukan sekelilingnya
         odd = (np.abs(gray - floor) > c.obstacle_contrast) | (hsv[:, :, 1] > 90)
-        odd &= corr & ~red & ~green & (self.row_x[:, None] <= c.obstacle_x_max)
+        # marka berwarna TIPIS (start/finish, checkpoint) + tepi buramnya bukan obstacle. Blob berwarna yang
+        # besar tetap obstacle (obstacle merah/hijau jangan sampai hilang).
+        col = (red | green).astype(np.uint8)
+        thin = col & (1 - cv2.morphologyEx(col, cv2.MORPH_OPEN, self.k_obs))
+        excl = cv2.dilate(thin, self.k_mark) > 0
+        odd &= corr & ~excl & ((self.row_x >= c.obstacle_x_min) & (self.row_x <= c.obstacle_x_max))[:, None]
         odd = cv2.morphologyEx(odd.astype(np.uint8), cv2.MORPH_OPEN, self.k_obs)
         n_cc, lab, st, _ = cv2.connectedComponentsWithStats(odd, connectivity=8)
         best = None

@@ -18,10 +18,11 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from ksti_mav.core.geometry import CameraConfig  # noqa: E402
 from ksti_mav.core.pilot import AutoPilot, PilotConfig  # noqa: E402
-from ksti_mav.core.score import Referee, total  # noqa: E402
+from ksti_mav.core.score import Referee, obstacle_hit, total  # noqa: E402
 from ksti_mav.core.track import Track  # noqa: E402
 
 CAR_LEN, CAR_W = 0.40, 0.19
+HOOD_ROW = 315  # moncong mobil di kamera Gazebo mulai baris ini (lihat tools/gz_snapshot.py)
 
 
 class Sim:
@@ -42,6 +43,9 @@ class Sim:
         self.cc = cam_cfg or CameraConfig()
         self.cam = self.cc.make()
         self.sky = ~self.cam.pixel_rays_hit_ground()
+        # moncong mobil terlihat di bawah gambar mulai baris HOOD_ROW (diukur dari kamera Gazebo)
+        self.body = np.zeros_like(self.sky)
+        self.body[HOOD_ROW:] = True
         self.pc = pilot_cfg or PilotConfig()
         self.pilot = AutoPilot(self.cam, cfg=self.pc)
         self.ref = Referee(self.tr, CAR_W, out_frac=0.5 if challenge else 0.3)
@@ -62,6 +66,7 @@ class Sim:
                                   flags=cv2.WARP_INVERSE_MAP | cv2.INTER_LINEAR,
                                   borderMode=cv2.BORDER_CONSTANT, borderValue=self.floor)
         img[self.sky] = (150, 150, 150)
+        img[self.body] = (128, 128, 128)  # moncong abu-abu terlihat di bawah gambar, seperti di Gazebo
         noise = self.rng.normal(0, 4, img.shape)
         gain = 1 + 0.1 * math.sin(self.t * 0.7)  # pencahayaan berubah pelan
         return np.clip(img * gain + noise, 0, 255).astype(np.uint8)
@@ -69,14 +74,7 @@ class Sim:
     def collide(self):
         cx = self.x + self.pc.wheelbase / 2 * math.cos(self.yaw)
         cy = self.y + self.pc.wheelbase / 2 * math.sin(self.yaw)
-        h = self.tr.d.get("obstacle_size_m", 0.15) / 2
-        for ox, oy, _ in self.obstacles:
-            dx, dy = ox - cx, oy - cy
-            lx = dx * math.cos(self.yaw) + dy * math.sin(self.yaw)
-            ly = -dx * math.sin(self.yaw) + dy * math.cos(self.yaw)
-            if abs(lx) < CAR_LEN / 2 + h and abs(ly) < CAR_W / 2 + h:
-                return True
-        return False
+        return obstacle_hit(self.obstacles, self.tr.d.get("obstacle_size_m", 0.15), cx, cy, self.yaw, CAR_LEN, CAR_W)
 
     def place_at(self, s):
         n = len(self.tr.center)

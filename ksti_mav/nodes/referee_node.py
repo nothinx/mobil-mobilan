@@ -10,7 +10,7 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from std_msgs.msg import String
 
-from ksti_mav.core.score import Referee, total
+from ksti_mav.core.score import Referee, obstacle_hit, total
 from ksti_mav.core.track import Track
 
 
@@ -23,6 +23,8 @@ class RefereeNode(Node):
         self.wb = self.declare_parameter("wheelbase", 0.26).value
         self.ref = Referee(self.tr, self.declare_parameter("car_width", 0.19).value, 0.5 if challenge else 0.3)
         self.started = False
+        self.obstacles = self.tr.d["obstacles"] if challenge else []
+        self.bumped = False
         self.pub = self.create_publisher(String, "/referee/status", 10)
         self.create_subscription(Odometry, "/odom", self.on_odom, 20)
         self.create_timer(0.5, self.report)
@@ -41,6 +43,11 @@ class RefereeNode(Node):
             self.ref.reset(self.now())
             self.ref.s_prev = self.tr.project(x, y)[0]
             self.get_logger().info("wasit: mobil bergerak, waktu berjalan")
+        hit = obstacle_hit(self.obstacles, self.tr.d.get("obstacle_size_m", 0.15), x, y, yaw)
+        if hit and not self.bumped and not self.ref.finished:
+            self.ref.violations.append("obstacle")
+            self.get_logger().info(f"wasit: tabrak obstacle (pelanggaran {len(self.ref.violations)})")
+        self.bumped = hit
         for e in self.ref.update(x, y, self.now()):
             self.get_logger().info(f"wasit: {e} (cp {self.ref.cp}, pelanggaran {len(self.ref.violations)})")
 

@@ -79,6 +79,11 @@ Diolah otomatis oleh `tools/make_track.py` (komponen garis tepi, potongan garis 
   Di simulasi: sudut maks 0.50 rad (29°) → 2 tabrakan; 0.60 rad (34°) → bersih.
 - Maka syarat sasis: **sudut roda ≥ 34°** (atau radius putar poros belakang ≤ 0.40 m). Lihat
   `docs/MEKANIKAL-ELEKTRIKAL.md` §1.
+- **Batas fisik obstacle di tikungan ~0.5 m:** mobil 40 cm yang belok di lajur dalam (radius ~0.36 m)
+  menyapu sampai ~0.56 m dari pusat belokan, sedangkan obstacle 15 cm di lajur luar mulai 0.55 m →
+  **pasti bersenggolan, berapa pun sudut setirnya.** Karena aturan menjamin radius ≥ 1.5 m, world
+  challenge di repo ini hanya menaruh obstacle di checkpoint dengan radius ≥ 0.9 m (6 dari 8).
+  Bila lintasan asli memang setajam contoh, mobil yang lebih pendek (< 32 cm) membantu.
 
 Tanyakan saat Technical Meeting (8 Nov): apakah lintasan asli memakai bentuk contoh ini dan berapa skala aslinya.
 
@@ -125,6 +130,12 @@ Pelajaran dari simulasi (iterasi nyata, dicatat agar tidak diulang):
 | Ambiguitas 25 cm | Pasangan (tepi kanan, tengah) tertukar dengan (tengah, tepi kiri) | Pola **putus-putus wajib** untuk peran tengah bila garis cukup panjang dinilai. |
 | Finish terdeteksi di depan | Mobil berhenti sebelum garis | Tetap jalan 0.9 m setelah finish terlihat. |
 | Menghindar terlambat | Lookahead panjang = geser lateral lambat | Saat menghindar: lookahead minimum + kecepatan 0.7 m/s. |
+| **Moncong mobil terlihat kamera** (Gazebo) | Tepi atas moncong = "garis" melintang → peran garis tengah → mobil keluar arena | `lane.hood_row`: baris citra ke bawah diabaikan. **Wajib disetel di mobil asli.** |
+| Moncong = obstacle hantu (Gazebo) | Mobil terus "menghindar" benda yang tak ada | Obstacle dicari mulai 0.50 m. |
+| Sisi hindar terkunci (Gazebo) | Obstacle berikutnya di lajur lain tertabrak | Sisi dievaluasi ulang selama obstacle > 0.75 m, dikunci saat dekat. |
+| Lantai di luar arena / tepi buram marka hijau (Gazebo) | Obstacle hantu → mobil menghindar ke luar tikungan | Obstacle hanya di dalam garis tepi (±22 cm); marka berwarna **tipis** + tepinya dikecualikan, blob berwarna besar tetap obstacle. |
+| Lantai di luar lintasan mendominasi pandangan di tepi arena (Gazebo) | Median "lantai" salah → seluruh lintasan gelap dianggap obstacle; polaritas marka bisa terbalik | Warna lantai diukur hanya di koridor lintasan (prediksi garis tengah ±25 cm). |
+| Plugin AckermannSteering Fortress 6.18 | Setir butuh ~2 s ke 90 % (tanpa parameter gain) → osilasi | Ganti dengan JointPositionController per roda + node `sim_drive` (geometri Ackermann, laju servo 5 rad/s). |
 
 **Kontrol:** pure pursuit pada garis tengah (+ offset lajur saat menghindar), lookahead
 0.45 + 0.35·v (maks 0.95 m), kecepatan dibatasi percepatan lateral 1.8 m/s² dari kelengkungan
@@ -148,7 +159,10 @@ Waktu proses autopilot: ~15 ms/frame di laptop (x86). Perkiraan Orin Nano (CPU A
 2–3× lebih lambat → 30–45 ms → 22–30 fps (belum terverifikasi; ukur dengan `ros2 topic hz /cmd_vel`).
 
 **Batas simulasi 2D:** obstacle digambar datar, tanpa perspektif 3D, tanpa slip ban, tanpa blur gerak.
-Gazebo (`sim.launch.py`) menutup sebagian (obstacle kotak 3D, fisika roda). Mobil asli tetap penentu.
+Gazebo menutup sebagian (obstacle kotak 3D, fisika roda, moncong terlihat). Mobil asli tetap penentu.
+
+**Gazebo Fortress** (Docker, render perangkat lunak, kamera 28 fps, RTF ≈ 1, wasit otomatis):
+lihat tabel keandalan di README (beberapa run per world; Gazebo tidak deterministik).
 
 ## 7. Jetson Orin Nano
 

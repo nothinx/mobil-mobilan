@@ -23,6 +23,7 @@ class PilotConfig:
     avoid: bool = True             # aktifkan penghindaran obstacle (misi challenge)
     avoid_offset: float = 0.14
     avoid_trigger_x: float = 1.30  # mulai menghindar bila obstacle lebih dekat dari ini [m]
+    avoid_lock_x: float = 0.75     # di bawah jarak ini sisi hindar tidak berubah lagi [m]
     v_avoid: float = 0.7           # kecepatan saat menghindar; lookahead dipendekkan ke ld_min
     avoid_hold_m: float = 0.55     # tetap di lajur hindar sejauh ini setelah obstacle hilang
     offset_rate: float = 2.0       # laju perubahan offset lateral [m/s]
@@ -99,7 +100,9 @@ class AutoPilot:
         target = c.race_offset
         if c.avoid and obs is not None and obs.x < c.avoid_trigger_x:
             info["obs"] = (round(obs.x, 2), round(obs.lateral, 2))
-            if self.avoid_target is None:
+            # sisi dievaluasi ulang selama obstacle masih jauh (obstacle berikutnya bisa di lajur lain),
+            # dikunci saat dekat agar tidak bimbang tepat di depan obstacle
+            if self.avoid_target is None or obs.x > c.avoid_lock_x:
                 self.avoid_target = c.avoid_offset if obs.lateral < 0 else -c.avoid_offset
             self.hold_left = c.avoid_hold_m
         elif self.avoid_target is not None:
@@ -112,9 +115,9 @@ class AutoPilot:
         self.offset += float(np.clip(target - self.offset, -step, step))
 
         # --- lajur hilang ---
-        if lane.conf > 0.15:
+        if lane.conf > 0.15 and len(lane.path) >= 2:
             self.t_seen = t
-        elif t - self.t_seen > c.lost_stop_s:
+        elif t - self.t_seen > c.lost_stop_s or len(lane.path) < 2:
             self.v = 0.0
             return Command(0.0, self.steer, "RUN", {**info, "lost": True})
 

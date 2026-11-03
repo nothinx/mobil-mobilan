@@ -2,8 +2,8 @@
 <!--
   Mobil 1:10 kemudi Ackermann untuk Gazebo Fortress.
   Asal model = titik tanah di bawah poros roda belakang (sama dengan frame mobil di ksti_mav/core).
-  Ukuran HARUS sama dengan PilotConfig.wheelbase dan CameraConfig (dijaga tests/test_core.py).
-    wheelbase 0.26  track 0.16  roda r 0.033  kamera x 0.22 z 0.24 pitch 0.55 hfov 1.60 640x480
+  Ukuran HARUS sama dengan PilotConfig (wheelbase, max_steer) dan CameraConfig (dijaga tests/test_core.py).
+    wheelbase 0.26  track 0.16  kingpin 0.14  roda r 0.033  kamera x 0.22 z 0.24 pitch 0.55 hfov 1.60 640x480
 -->
 <sdf version="1.8">
   <model name="mav_car">
@@ -62,11 +62,11 @@
     <!-- poros kemudi depan (kingpin) + roda depan -->
     <link name="front_left_steer">
       <pose>0.26 0.07 0.033 0 0 0</pose>
-      <inertial><mass>0.02</mass><inertia><ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
+      <inertial><mass>0.1</mass><inertia><ixx>2e-4</ixx><iyy>2e-4</iyy><izz>2e-4</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
     </link>
     <link name="front_right_steer">
       <pose>0.26 -0.07 0.033 0 0 0</pose>
-      <inertial><mass>0.02</mass><inertia><ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
+      <inertial><mass>0.1</mass><inertia><ixx>2e-4</ixx><iyy>2e-4</iyy><izz>2e-4</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
     </link>
     <link name="front_left_wheel">
       <pose>0.26 0.08 0.033 0 0 0</pose>
@@ -95,11 +95,11 @@
     </joint>
     <joint name="front_left_steer_joint" type="revolute">
       <parent>base_link</parent><child>front_left_steer</child>
-      <axis><xyz>0 0 1</xyz><limit><lower>-0.6</lower><upper>0.6</upper></limit></axis>
+      <axis><xyz>0 0 1</xyz><limit><lower>-0.6</lower><upper>0.6</upper><effort>1e6</effort></limit></axis>
     </joint>
     <joint name="front_right_steer_joint" type="revolute">
       <parent>base_link</parent><child>front_right_steer</child>
-      <axis><xyz>0 0 1</xyz><limit><lower>-0.6</lower><upper>0.6</upper></limit></axis>
+      <axis><xyz>0 0 1</xyz><limit><lower>-0.6</lower><upper>0.6</upper><effort>1e6</effort></limit></axis>
     </joint>
     <joint name="front_left_wheel_joint" type="revolute">
       <parent>front_left_steer</parent><child>front_left_wheel</child>
@@ -110,22 +110,20 @@
       <axis><xyz>0 1 0</xyz><limit><lower>-1e16</lower><upper>1e16</upper></limit></axis>
     </joint>
 
-    <plugin filename="ignition-gazebo-ackermann-steering-system" name="ignition::gazebo::systems::AckermannSteering">
-      <left_joint>rear_left_wheel_joint</left_joint>
-      <right_joint>rear_right_wheel_joint</right_joint>
-      <left_steering_joint>front_left_steer_joint</left_steering_joint>
-      <right_steering_joint>front_right_steer_joint</right_steering_joint>
-      <kingpin_width>0.14</kingpin_width>
-      <steering_limit>0.6</steering_limit>
-      <wheel_base>0.26</wheel_base>
-      <wheel_separation>0.16</wheel_separation>
-      <wheel_radius>0.033</wheel_radius>
-      <min_velocity>-3</min_velocity>
-      <max_velocity>3</max_velocity>
-      <min_acceleration>-4</min_acceleration>
-      <max_acceleration>4</max_acceleration>
-      <topic>/cmd_vel</topic>
-      <odom_topic>/ackermann/odom</odom_topic>
+    <!-- Setir & roda dikendalikan per sendi; geometri Ackermann dihitung node sim_drive (lihat docstring-nya). -->
+    <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+      <joint_name>front_left_steer_joint</joint_name><topic>/sim/steer_left</topic>
+      <p_gain>1.5</p_gain><i_gain>0</i_gain><d_gain>0.02</d_gain><cmd_max>5</cmd_max><cmd_min>-5</cmd_min>
+    </plugin>
+    <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+      <joint_name>front_right_steer_joint</joint_name><topic>/sim/steer_right</topic>
+      <p_gain>1.5</p_gain><i_gain>0</i_gain><d_gain>0.02</d_gain><cmd_max>5</cmd_max><cmd_min>-5</cmd_min>
+    </plugin>
+    <plugin filename="ignition-gazebo-joint-controller-system" name="ignition::gazebo::systems::JointController">
+      <joint_name>rear_left_wheel_joint</joint_name><topic>/sim/wheel_left</topic>
+    </plugin>
+    <plugin filename="ignition-gazebo-joint-controller-system" name="ignition::gazebo::systems::JointController">
+      <joint_name>rear_right_wheel_joint</joint_name><topic>/sim/wheel_right</topic>
     </plugin>
     <plugin filename="ignition-gazebo-odometry-publisher-system" name="ignition::gazebo::systems::OdometryPublisher">
       <odom_frame>world</odom_frame>

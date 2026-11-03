@@ -45,8 +45,10 @@ def test_sdf_matches_config():
     assert [float(v) for v in pose] == [cam.cam_x, 0, cam.cam_h, 0, cam.pitch, 0]
     assert float(re.search(r"<horizontal_fov>([^<]+)<", sdf).group(1)) == cam.hfov
     assert f"<width>{cam.width}</width><height>{cam.height}</height>" in sdf
-    assert float(re.search(r"<wheel_base>([^<]+)<", sdf).group(1)) == pc.wheelbase
-    assert float(re.search(r"<steering_limit>([^<]+)<", sdf).group(1)) == pc.max_steer
+    front = re.search(r'<link name="front_left_wheel">\s*<pose>([^<]+)</pose>', sdf).group(1).split()
+    assert float(front[0]) == pc.wheelbase
+    upper = re.search(r'<joint name="front_left_steer_joint".*?<upper>([^<]+)</upper>', sdf, re.S).group(1)
+    assert float(upper) == pc.max_steer
 
 
 def _lap(**kw):

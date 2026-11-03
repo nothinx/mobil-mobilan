@@ -2,6 +2,8 @@
 
 Jalankan `python -m ksti_mav.core.score` untuk tabel strategi.
 """
+import math
+
 T_STAGE = 300.0  # batas waktu percobaan [s]
 PENALTY = {"checkpoint": 0.5, "obstacle": 0.5, "lepas": 0.2, "keluar": 0.8}
 STP_ACKERMANN = 0.25
@@ -21,6 +23,17 @@ def s_arc(t_total, cp, tcp, t_stage=T_STAGE):
 
 def total(sar, ackermann=True, sarc=0.0):
     return sar * (1 + (STP_ACKERMANN if ackermann else 0.0) + sarc)
+
+
+def obstacle_hit(obstacles, size, cx, cy, yaw, car_len=0.40, car_w=0.19):
+    """Badan mobil (persegi panjang berpusat cx,cy) menyentuh salah satu obstacle kotak `size`?"""
+    h = size / 2
+    c, s = math.cos(yaw), math.sin(yaw)
+    for ox, oy, *_ in obstacles:
+        dx, dy = ox - cx, oy - cy
+        if abs(dx * c + dy * s) < car_len / 2 + h and abs(-dx * s + dy * c) < car_w / 2 + h:
+            return True
+    return False
 
 
 class Referee:

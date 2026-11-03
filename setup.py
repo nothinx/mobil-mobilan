@@ -39,6 +39,7 @@ setup(
             "camera = ksti_mav.nodes.camera_node:main",
             "serial_bridge = ksti_mav.nodes.serial_bridge_node:main",
             "referee = ksti_mav.nodes.referee_node:main",
+            "sim_drive = ksti_mav.nodes.sim_drive_node:main",
         ],
     },
 )

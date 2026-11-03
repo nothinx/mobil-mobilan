@@ -24,6 +24,7 @@ autopilot:
     camera.cy: 0.0         #            = K[5]
     lane.polarity: "auto"  # auto | white | black — kunci saat test day bila lantai arena sudah jelas
     lane.track_width: 0.50
+    lane.hood_row: 300     # UKUR: baris gambar kamera tempat moncong/bumper mulai terlihat, kurangi ~15 (0 = tak terlihat)
     pilot.wheelbase: 0.26  # UKUR: poros depan ke poros belakang [m]
     pilot.max_steer: 0.60  # UKUR: sudut roda maksimum [rad]
     pilot.v_max: 0.8       # mulai pelan; naikkan bertahap setelah 3 lap bersih berturut-turut

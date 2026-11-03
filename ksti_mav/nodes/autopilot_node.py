@@ -79,6 +79,9 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        node.pub_cmd.publish(Twist())
+        try:
+            node.pub_cmd.publish(Twist())  # berhenti saat node dimatikan
+        except Exception:
+            pass
         node.destroy_node()
         rclpy.try_shutdown()

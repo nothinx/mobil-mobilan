@@ -156,12 +156,15 @@ Jalankan di Jetson. Isi hasilnya ke `config/robot.yaml`, lalu `colcon build` (ti
    `ros2 run camera_calibration cameracalibrator --size 8x6 --square 0.025 image:=/camera/image_raw`
    (papan catur cetak A4, kotak 25 mm). Salin `camera_matrix` → `camera.K` + `autopilot camera.fx/fy/cx/cy`,
    `distortion_coefficients` → `camera.D`.
-6. **Pose kamera**: ukur `cam_x` (lensa ke poros belakang), `cam_h` (lensa ke lantai), perkiraan `pitch`.
+6. **Moncong di kamera**: buka gambar kamera (`python3 tools/gz_snapshot.py snap`), cari baris piksel
+   teratas tempat bumper/moncong/kabel mobil terlihat, kurangi ~15 → `lane.hood_row`. Tanpa ini tepi
+   moncong terbaca sebagai garis dan mobil bisa keluar jalur (terbukti di Gazebo).
+7. **Pose kamera**: ukur `cam_x` (lensa ke poros belakang), `cam_h` (lensa ke lantai), perkiraan `pitch`.
    Lalu letakkan mobil lurus di bagian lurus lintasan, buka `/autopilot/debug`
    (`ros2 run rqt_image_view rqt_image_view`, dari laptop via jaringan sebelum lomba). **Garis harus
    sejajar dan berjarak 25 cm.** Melebar ke atas = pitch terlalu kecil; menyempit = terlalu besar.
    Setel per 0.01 rad.
-7. **Uji jalan**: `pilot.v_max 0.6` → 3 lap bersih → naikkan 0.1 → ulangi. Catat nilai aman tertinggi
+8. **Uji jalan**: `pilot.v_max 0.6` → 3 lap bersih → naikkan 0.1 → ulangi. Catat nilai aman tertinggi
    untuk lantai gelap dan terang.
 
 ## 7. Checklist sebelum tiap percobaan
