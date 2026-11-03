@@ -1,0 +1,15 @@
+[Unit]
+Description=KSTI MAV autopilot (kamera + autopilot + serial MCU)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=__USER__
+# Ganti robot.launch.py -> "robot.launch.py challenge:=true" untuk misi challenge (atau pakai override)
+ExecStart=/bin/bash -lc 'source /opt/ros/humble/setup.bash && source ~/ws/install/setup.bash && exec ros2 launch ksti_mav robot.launch.py'
+Restart=always
+RestartSec=2
+Environment=ROS_LOCALHOST_ONLY=1
+
+[Install]
+WantedBy=multi-user.target

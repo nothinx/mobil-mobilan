@@ -1,0 +1,28 @@
+# Simulasi Gazebo di Windows (Docker Desktop + WSLg) atau Linux.
+#   docker compose run --rm sim                                           # lintasan gelap
+#   docker compose run --rm sim ros2 launch ksti_mav sim.launch.py world:=ksti_light_challenge
+#   docker compose run --rm test                                          # tes inti (tanpa GUI)
+# Linux native: ganti mount wslg dengan /tmp/.X11-unix dan jalankan `xhost +local:` dulu.
+x-gui: &gui
+  build: { context: ., dockerfile: docker/Dockerfile }
+  image: ksti-mav-sim
+  volumes:
+    - .:/ws/src/ksti_mav
+    - /run/desktop/mnt/host/wslg/.X11-unix:/tmp/.X11-unix
+    - /run/desktop/mnt/host/wslg:/mnt/wslg
+  environment:
+    DISPLAY: ":0"
+    WAYLAND_DISPLAY: wayland-0
+    XDG_RUNTIME_DIR: /mnt/wslg/runtime-dir
+    PULSE_SERVER: /mnt/wslg/PulseServer
+    LIBGL_ALWAYS_SOFTWARE: "1"   # paling aman di WSLg; hapus bila GPU passthrough jalan
+    QT_X11_NO_MITSHM: "1"
+
+services:
+  sim:
+    <<: *gui
+  test:
+    build: { context: ., dockerfile: docker/Dockerfile }
+    image: ksti-mav-sim
+    volumes: [".:/ws/src/ksti_mav"]
+    command: ["python3", "/ws/src/ksti_mav/tests/test_core.py"]

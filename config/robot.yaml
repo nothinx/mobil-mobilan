@@ -1,0 +1,47 @@
+# Parameter mobil ASLI. Nilai bertanda UKUR/KALIBRASI wajib diisi dari mobil kalian
+# (prosedur: docs/MEKANIKAL-ELEKTRIKAL.md bagian 6). Default = model Gazebo.
+camera:
+  ros__parameters:
+    source: "csi"          # "csi" (IMX219 di port CSI) | "0" (USB) | pipeline GStreamer penuh
+    width: 640
+    height: 480
+    fps: 30
+    K: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]   # KALIBRASI: camera_calibration -> camera_matrix
+    D: [0.0, 0.0, 0.0, 0.0, 0.0]                         # KALIBRASI: distortion_coefficients
+
+autopilot:
+  ros__parameters:
+    debug_every: 5
+    camera.width: 640
+    camera.height: 480
+    camera.hfov: 1.60      # diabaikan bila fx diisi
+    camera.cam_x: 0.22     # UKUR: lensa ke poros roda BELAKANG, sepanjang mobil [m]
+    camera.cam_h: 0.24     # UKUR: lensa ke lantai [m]
+    camera.pitch: 0.55     # UKUR lalu setel halus: sudut menunduk [rad] (garis lurus harus sejajar di BEV)
+    camera.fx: 0.0         # KALIBRASI: = K[0]
+    camera.fy: 0.0         #            = K[4]
+    camera.cx: 0.0         #            = K[2]
+    camera.cy: 0.0         #            = K[5]
+    lane.polarity: "auto"  # auto | white | black — kunci saat test day bila lantai arena sudah jelas
+    lane.track_width: 0.50
+    pilot.wheelbase: 0.26  # UKUR: poros depan ke poros belakang [m]
+    pilot.max_steer: 0.60  # UKUR: sudut roda maksimum [rad]
+    pilot.v_max: 0.8       # mulai pelan; naikkan bertahap setelah 3 lap bersih berturut-turut
+    pilot.v_min: 0.35
+    pilot.min_lap_s: 8.0   # garis finish diabaikan sebelum ini (mobil start di atas garis)
+
+serial_bridge:
+  ros__parameters:
+    port: "/dev/ttyUSB0"   # Arduino Nano CH340 = ttyUSB0; Nano asli/ESP32-S3 = ttyACM0
+    baud: 115200
+    wheelbase: 0.26
+    max_steer: 0.60
+    servo_center_us: 1500  # KALIBRASI: roda lurus
+    servo_us_per_rad: 800.0  # KALIBRASI: negatif bila setir terbalik
+    servo_min_us: 1000     # KALIBRASI: mentok kanan/kiri tanpa servo mengerang
+    servo_max_us: 2000
+    esc_neutral_us: 1500
+    esc_us_per_mps: 120.0  # KALIBRASI: negatif bila motor terbalik
+    esc_deadband_us: 50    # KALIBRASI: pulsa tambahan minimum agar mobil mulai bergerak
+    esc_max_us: 1750       # batas keamanan
+    cmd_timeout: 0.25

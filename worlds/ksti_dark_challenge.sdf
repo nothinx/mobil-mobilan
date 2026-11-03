@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<!-- Dibangkitkan oleh tools/make_track.py; jangan edit tangan. -->
+<sdf version="1.8">
+  <world name="ksti">
+    <physics name="2ms" type="ignored">
+      <max_step_size>0.002</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <scene>
+      <ambient>0.9 0.9 0.9 1</ambient>
+      <background>0.75 0.75 0.75 1</background>
+      <grid>false</grid>
+      <shadows>false</shadows>
+    </scene>
+    <light type="directional" name="sun">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.05 0.05 0.05 1</specular>
+      <direction>-0.2 0.1 -1</direction>
+    </light>
+    <model name="hall_floor">
+      <static>true</static>
+      <pose>0 0 -0.002 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>30 30</size></plane></geometry>
+          <material><ambient>0.12 0.12 0.13 1</ambient><diffuse>0.12 0.12 0.13 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <include><uri>model://ksti_track_dark</uri></include>
+    <model name="obstacle_0">
+      <static>true</static>
+      <pose>-0.241 -2.987 0.075 0 0 -0.046</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.15 0.15 0.15</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 0.15 0.15</size></box></geometry>
+          <material><ambient>0.95 0.45 0.05 1</ambient><diffuse>0.95 0.45 0.05 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="obstacle_1">
+      <static>true</static>
+      <pose>1.754 -2.645 0.075 0 0 0.446</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.15 0.15 0.15</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 0.15 0.15</size></box></geometry>
+          <material><ambient>0.95 0.45 0.05 1</ambient><diffuse>0.95 0.45 0.05 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="obstacle_2">
+      <static>true</static>
+      <pose>2.286 -0.889 0.075 0 0 1.384</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.15 0.15 0.15</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 0.15 0.15</size></box></geometry>
+          <material><ambient>0.95 0.45 0.05 1</ambient><diffuse>0.95 0.45 0.05 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="obstacle_3">
+      <static>true</static>
+      <pose>1.971 1.155 0.075 0 0 1.788</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.15 0.15 0.15</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 0.15 0.15</size></box></geometry>
+          <material><ambient>0.95 0.45 0.05 1</ambient><diffuse>0.95 0.45 0.05 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="obstacle_4">
+      <static>true</static>
+      <pose>1.388 2.998 0.075 0 0 2.863</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.15 0.15 0.15</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 0.15 0.15</size></box></geometry>
+          <material><ambient>0.95 0.45 0.05 1</ambient><diffuse>0.95 0.45 0.05 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="obstacle_5">
+      <static>true</static>
+      <pose>-0.693 2.708 0.075 0 0 2.978</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.15 0.15 0.15</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 0.15 0.15</size></box></geometry>
+          <material><ambient>0.95 0.45 0.05 1</ambient><diffuse>0.95 0.45 0.05 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="obstacle_6">
+      <static>true</static>
+      <pose>-2.256 2.016 0.075 0 0 -1.361</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.15 0.15 0.15</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 0.15 0.15</size></box></geometry>
+          <material><ambient>0.95 0.45 0.05 1</ambient><diffuse>0.95 0.45 0.05 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="obstacle_7">
+      <static>true</static>
+      <pose>-2.135 -0.001 0.075 0 0 -1.651</pose>
+      <link name="link">
+        <collision name="c"><geometry><box><size>0.15 0.15 0.15</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.15 0.15 0.15</size></box></geometry>
+          <material><ambient>0.95 0.45 0.05 1</ambient><diffuse>0.95 0.45 0.05 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>
